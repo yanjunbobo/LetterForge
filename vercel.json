@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/word/:word",
+      "destination": "/word/index.html"
+    }
+  ]
+}

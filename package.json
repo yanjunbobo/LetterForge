@@ -1,0 +1,11 @@
+{
+  "name": "letterforge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/generate-site.mjs",
+    "dev": "node scripts/dev-server.mjs",
+    "check": "node scripts/check-site.mjs"
+  }
+}
