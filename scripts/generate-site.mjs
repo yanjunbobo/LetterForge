@@ -144,6 +144,7 @@ function layout({ title, desc, url, h1, body, pageClass = "" }) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   ${seo({ title, desc, url, h1 })}
   <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/ads.js" defer></script>
   <script type="module" src="/assets/app.js"></script>
 </head>
 <body class="${pageClass}">

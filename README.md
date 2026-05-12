@@ -70,7 +70,17 @@ The search logic lives in `assets/app.js`:
 
 ## Adding AdSense
 
-Ad placeholders use `.ad-slot` and `data-ad-slot` attributes. Replace the placeholder markup or add one central ad loader in `assets/app.js`. Keep ads below or beside the primary tool so the first interaction remains fast.
+Ad placeholders use `.ad-slot` and `data-ad-slot` attributes. The centralized loader is `assets/ads.js`.
+
+To enable Google AdSense:
+
+1. Open `assets/ads.js`.
+2. Replace `ca-pub-REPLACE_WITH_YOUR_ID` with your AdSense publisher ID.
+3. Replace `REPLACE_WITH_SIDEBAR_SLOT_ID` and `REPLACE_WITH_CONTENT_SLOT_ID` with your ad unit slot IDs.
+4. Set `enabled: true`.
+5. Regenerate and deploy the site.
+
+Keep ads below or beside the primary tool so the first interaction remains fast.
 
 ## Adding SEO pages
 
