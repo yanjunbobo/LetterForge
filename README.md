@@ -58,7 +58,7 @@ The site is static and can deploy to Netlify, Vercel, or GitHub Pages. Netlify c
 
 ## Replacing the word list
 
-The active word list is `data/words.json`, generated from `scripts/generate-site.mjs`. Replace it with a larger open or licensed list using lowercase alphabetic words. Do not market the site as using an official game dictionary unless you have actually licensed and connected that data.
+The active word list is `data/words.json`, generated from `scripts/generate-site.mjs`. This build combines a curated starter list with a filtered copy of `dwyl/english-words` `words_alpha.txt` for broader local search coverage. The upstream repository is published under the Unlicense license. Replace it with another open or licensed list using lowercase alphabetic words when needed. Do not market the site as using an official game dictionary unless you have actually licensed and connected that data.
 
 The search logic lives in `assets/app.js`:
 

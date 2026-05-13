@@ -1,4 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
@@ -9,7 +10,19 @@ const words = `
 ace act add age ago aid aim air ale all amp ant ape apt arc are arm art ash ask ate awe bad bag ban bar bat bay bed bee bet bid big bin bit blue boa boat bob bog book boon boot box boy bra cab cad can cap car card care cart cat cave code coin cold cone cook cool cop corn cost cot cove cow craft crate dare dart date deal dear deer den desk dew dial dog dome done door dove draw ear earn ease east eat eel egg elf elk elm end era face fact fade fair fame fare fast fate fear feat fed feel fern file find fine fire firm fish fit five flag flame flat flow foam fold food fool foot forge form fort four free frog game garden gear gem ghost gift girl give glow goal gold good grape gray green grin grit hand hard hare hat have heal hear heat held help hero hide hill hint hire home hope ice idea ink iron jam jar jazz jet job join joke jump key kite knit late leaf lean learn letter lift light line lion list listen loan lone long look lore lost love make maker map mark maze meal mean meat meet mint moon more most name near neat nest node note oak oath ocean open orange pace pack page pain pair pale panel part pass past path pear pet pine plan plane play player plot poem point pond port pose post prize race rack rain rake range rate read real reed rest rice ring ripe road roast rock role rose safe sand scar score seal seat seed seek seen send shape share sharp shine ship shoe short side sign silent since sink slate smart smile snake song sort sound space spear spell spike spine stack star start state stone story stream string style table tame team tear tile time tone tool trace track trade trail train tree trial true turn user veil vine vote wake walk wand water wave weak wear west wide wild wind wing winner wire wise word work world yarn year zone zoom
 `;
 
-const wordList = [...new Set(words.trim().split(/\s+/))].sort();
+function readWordFile(file) {
+  const full = path.join(root, file);
+  if (!existsSync(full)) return [];
+  return readFileSync(full, "utf8").split(/\s+/);
+}
+
+function normalizeWords(items, maxLength = 10) {
+  return [...new Set(items.map((word) => word.trim().toLowerCase()).filter((word) => /^[a-z]+$/.test(word) && word.length >= 2 && word.length <= maxLength))].sort();
+}
+
+const curatedWords = normalizeWords([...words.trim().split(/\s+/), ...readWordFile("data/word-source.txt")], 10);
+const wordList = normalizeWords([...curatedWords, ...readWordFile("data/word-source-large.txt")], 10);
+const staticWordList = curatedWords;
 const scoreMap = { a:1,e:1,i:1,o:1,u:1,l:1,n:1,s:1,t:1,r:1,d:2,g:2,b:3,c:3,m:3,p:3,f:4,h:4,v:4,w:4,y:4,k:5,j:8,x:8,q:10,z:10 };
 const scoreWord = (word) => [...word].reduce((sum, letter) => sum + (scoreMap[letter] || 0), 0);
 
@@ -219,7 +232,7 @@ function randomTool() {
 }
 
 function seoListPage({ url, title, desc, h1, filter, intro }) {
-  const list = wordList.filter(filter).slice(0, 80);
+  const list = wordList.filter(filter).slice(0, 160);
   return layout({ title, desc, url, h1, body: `<section class="hero compact"><div class="hero-copy"><p class="eyebrow">Word lists</p><h1>${h1}</h1><p>${intro}</p></div>${wordTool({ mode:"finder", exact:false, placeholder:"Search letters or add filters" })}</section><div class="page-grid"><div><section class="content-section"><h2>${h1} list</h2><div class="word-list">${list.map(w=>`<a href="/word/${w}">${w}</a>`).join("")}</div></section><section class="content-section"><h2>How to use this list</h2><p>Use this page for quick browsing, puzzle warmups, and internal navigation. Open any word to see score, length, letters, and related word ideas.</p></section>${faqHtml()}<div class="ad-slot" data-ad-slot="content">Ad placeholder</div></div>${relatedHtml()}</div>` });
 }
 
@@ -270,7 +283,7 @@ async function main() {
   await writePage("/dictionary-checker", smallToolPage({ url:"/dictionary-checker", title:"Dictionary Checker - Check a Word in LetterForge", desc:"Check whether a word exists in the current LetterForge word list and see length and Scrabble-style score.", h1:"Dictionary Checker", intro:"Check one word against the current LetterForge word list.", tool:dictionaryTool(), tips:["Type a single English word and the checker reports whether it appears in the current list.","Use it for quick validation, score estimates, and future dictionary API integration testing.","Remember this starter word list is not an official game dictionary. Replace it when you need broader coverage."] }));
   await writePage("/random-word-generator", smallToolPage({ url:"/random-word-generator", title:"Random Word Generator - Generate Filtered English Words", desc:"Generate random English words by length, starting letters, ending letters, and count.", h1:"Random Word Generator", intro:"Generate random words for practice, prompts, warmups, and puzzle ideas.", tool:randomTool(), tips:["Choose length, prefix, suffix, and count, then generate a random set from the local list.","This is useful for vocabulary drills, writing prompts, classroom games, and puzzle design.","Use shorter lists when practicing recall and larger lists when collecting ideas."] }));
   await writePage("/word", layout({ title:"Word Details | LetterForge", desc:"View word length, score, letters, anagrams, and related word links.", url:"/word", h1:"Word Details", body:`<section class="narrow-page" data-tool="word-detail"><h1>Word Details</h1><section class="results"><p class="empty-state">Loading word details...</p></section></section>` }));
-  for (const word of wordList) await writePage(`/word/${word}`, staticWordPage(word));
+  for (const word of staticWordList) await writePage(`/word/${word}`, staticWordPage(word));
   await writePage("/5-letter-words", seoListPage({ url:"/5-letter-words", title:"5-Letter Words List and Finder | LetterForge", desc:"Browse 5-letter words and use the word finder to filter puzzle candidates.", h1:"5-Letter Words", filter:w=>w.length===5, intro:"Browse useful five-letter words for Wordle-style puzzles, anagrams, and vocabulary practice." }));
   await writePage("/6-letter-words", seoListPage({ url:"/6-letter-words", title:"6-Letter Words List and Finder | LetterForge", desc:"Browse 6-letter words and find related words by letters, prefixes, and endings.", h1:"6-Letter Words", filter:w=>w.length===6, intro:"Browse six-letter words for anagrams, word games, and study sessions." }));
   await writePage("/words-starting-with-a", seoListPage({ url:"/words-starting-with-a", title:"Words Starting With A | LetterForge", desc:"Browse words that start with A and filter by length, ending, and included letters.", h1:"Words Starting With A", filter:w=>w.startsWith("a"), intro:"Explore words beginning with A, from short puzzle plays to longer vocabulary picks." }));
@@ -283,7 +296,7 @@ async function main() {
   await writePage("/terms", basicPage({ url:"/terms", title:"Terms of Use | LetterForge", desc:"Terms of use for LetterForge word tools.", h1:"Terms of Use", content:"<p>LetterForge is provided as a helpful word reference and puzzle-solving tool. Results are based on the current word list and may be incomplete.</p><p>Do not treat the included list as an official dictionary for tournament or paid competition decisions.</p>" }));
   await writePage("/sitemap", basicPage({ url:"/sitemap", title:"HTML Sitemap | LetterForge", desc:"Browse all main LetterForge pages.", h1:"Sitemap", content:`<ul>${["/","/anagram-solver","/word-finder","/wordle-solver","/dictionary-checker","/random-word-generator","/5-letter-words","/6-letter-words","/words-starting-with-a","/words-ending-with-e","/blog","/about","/contact","/privacy","/terms"].map(u=>`<li><a href="${u}">${u}</a></li>`).join("")}</ul>` }));
 
-  const urls = ["/","/anagram-solver","/word-finder","/wordle-solver","/dictionary-checker","/random-word-generator","/word",...wordList.map((word)=>`/word/${word}`),"/5-letter-words","/6-letter-words","/words-starting-with-a","/words-ending-with-e","/blog",...articles.map(a=>`/blog/${a.slug}`),"/about","/contact","/privacy","/terms","/sitemap"];
+  const urls = ["/","/anagram-solver","/word-finder","/wordle-solver","/dictionary-checker","/random-word-generator","/word",...staticWordList.map((word)=>`/word/${word}`),"/5-letter-words","/6-letter-words","/words-starting-with-a","/words-ending-with-e","/blog",...articles.map(a=>`/blog/${a.slug}`),"/about","/contact","/privacy","/terms","/sitemap"];
   await writeFile(path.join(root, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map(u=>`<url><loc>${site}${u}</loc></url>`).join("")}</urlset>`);
   await writeFile(path.join(root, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
   await writeFile(path.join(root, "404.html"), layout({ title:"Word Details | LetterForge", desc:"View word length, score, letters, anagrams, and related word links.", url:"/404", h1:"Word Details", body:`<section class="narrow-page" data-tool="word-detail"><h1>Word Details</h1><section class="results"><p class="empty-state">Loading word details...</p></section></section>` }));

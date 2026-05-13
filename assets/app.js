@@ -1,4 +1,9 @@
 const words = await fetch("/data/words.json").then((response) => response.json());
+const MAX_RESULTS = 1200;
+const wordsByLength = words.reduce((map, word) => {
+  (map[word.length] ||= []).push(word);
+  return map;
+}, {});
 
 const scores = { a:1,e:1,i:1,o:1,u:1,l:1,n:1,s:1,t:1,r:1,d:2,g:2,b:3,c:3,m:3,p:3,f:4,h:4,v:4,w:4,y:4,k:5,j:8,x:8,q:10,z:10 };
 
@@ -25,7 +30,17 @@ function findWords(options) {
   const ends = clean(options.endsWith);
   const must = clean(options.mustInclude);
   const total = letters.length + wildcards;
-  let list = words.filter((word) => {
+  if (!total && !starts && !ends && !must && !options.length) return [];
+  let candidates = words;
+  if (options.length && options.length !== "7+") {
+    candidates = wordsByLength[Number(options.length)] || [];
+  } else if (total) {
+    candidates = [];
+    const max = options.exact ? total : Math.min(total, 10);
+    const min = options.exact ? total : 2;
+    for (let len = min; len <= max; len += 1) candidates.push(...(wordsByLength[len] || []));
+  }
+  let list = candidates.filter((word) => {
     if (total && word.length > total) return false;
     if (options.exact && word.length !== total) return false;
     if (options.length === "7+" && word.length < 7) return false;
@@ -41,6 +56,9 @@ function findWords(options) {
     if (options.sortBy === "score") return b.score - a.score || b.length - a.length || a.word.localeCompare(b.word);
     return b.length - a.length || b.score - a.score || a.word.localeCompare(b.word);
   });
+  const truncated = list.length > MAX_RESULTS;
+  list = list.slice(0, MAX_RESULTS);
+  list.truncated = truncated;
   return list;
 }
 
@@ -58,7 +76,8 @@ function renderResults(container, results) {
     return;
   }
   const groups = grouped(results);
-  container.innerHTML = `<h2>${results.length} words found</h2>${Object.keys(groups).sort((a,b)=>b-a).map((len) => {
+  const capped = results.truncated ? `<p class="empty-state">Showing the first ${MAX_RESULTS} matches. Add a length, prefix, ending, or required letter to narrow the list.</p>` : "";
+  container.innerHTML = `<h2>${results.length}${results.truncated ? "+" : ""} words found</h2>${capped}${Object.keys(groups).sort((a,b)=>b-a).map((len) => {
     const visible = groups[len].slice(0, 24);
     const hidden = groups[len].slice(24);
     return `<section class="result-group"><h3>${len}-letter words</h3><div class="result-grid">${visible.map(resultCard).join("")}${hidden.map((item)=>`<span class="hidden-result">${resultCard(item)}</span>`).join("")}</div>${hidden.length ? `<button type="button" class="show-more">Show more</button>` : ""}</section>`;
