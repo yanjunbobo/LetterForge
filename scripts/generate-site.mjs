@@ -155,6 +155,8 @@ function layout({ title, desc, url, h1, body, pageClass = "" }) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="msvalidate.01" content="06348E2D3365CEEC6C11DC7D2A94F86E">
+  <meta name="google-site-verification" content="9iR16Pj9o70OLRY0a8GwzryOAvnkJQR3gq2AYIfnFQ0">
   ${seo({ title, desc, url, h1 })}
   <link rel="stylesheet" href="/assets/styles.css">
   <script src="/assets/ads.js" defer></script>
