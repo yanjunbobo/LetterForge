@@ -146,19 +146,68 @@ function setupWordle(tool) {
   form?.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(form));
-    const pattern = data.pattern.toLowerCase().replace(/\s/g, "").padEnd(5, "_").slice(0, 5);
-    const present = clean(data.present);
-    const excluded = clean(data.excluded);
-    const list = words.filter((word) => word.length === 5)
+    const grid = Array.from({ length: 5 }, (_, i) => ({ letter: clean(data[`cell${i}`]).slice(0, 1), state: data[`state${i}`] || "unknown" }));
+    const gridPattern = grid.map((cell) => cell.state === "green" && cell.letter ? cell.letter : "_").join("");
+    const typedPattern = String(data.pattern || "").toLowerCase().replace(/\s/g, "").replace(/[^a-z_?]/g, "_").padEnd(5, "_").slice(0, 5).replace(/\?/g, "_");
+    const pattern = [...gridPattern].map((ch, i) => ch !== "_" ? ch : typedPattern[i]).join("");
+    const yellowPositions = grid.map((cell, i) => cell.state === "yellow" && cell.letter ? [cell.letter, i] : null).filter(Boolean);
+    const present = clean(String(data.present || "") + grid.filter((cell) => cell.state === "yellow").map((cell) => cell.letter).join(""));
+    const excluded = clean(String(data.excluded || "") + grid.filter((cell) => cell.state === "gray").map((cell) => cell.letter).join(""));
+    const candidates = (wordsByLength[5] || [])
       .filter((word) => [...pattern].every((ch, i) => ch === "_" || ch === word[i]))
+      .filter((word) => yellowPositions.every(([letter, index]) => word.includes(letter) && word[index] !== letter))
       .filter((word) => [...present].every((ch) => word.includes(ch)))
+      .filter((word) => ![...excluded].some((ch) => word.includes(ch)));
+    const list = candidates.map((word) => ({ word, length: 5, score: scoreWord(word), definition: "Candidate five-letter word from the current list." }));
+    list.queryTotal = 5;
+    const recommendationPool = form.hardMode.checked ? candidates : (wordsByLength[5] || []).filter((word) => ![...excluded].some((ch) => word.includes(ch)));
+    const recommended = recommendGuesses(candidates, recommendationPool).slice(0, 8);
+    const recommendationHtml = recommended.length ? `<section class="result-spotlight"><h3>Recommended next guess</h3><div class="mini-word-list">${recommended.map((word) => miniWord({ word, score: scoreWord(word) })).join("")}</div></section>` : "";
+    renderResults(results, list);
+    results.insertAdjacentHTML("afterbegin", recommendationHtml);
+  });
+  tool.querySelector("[data-action='clear']")?.addEventListener("click", () => {
+    form.reset();
+    results.innerHTML = `<h2>Candidates</h2><p class="empty-state">Add green, yellow, gray, or pattern clues to filter five-letter words.</p>`;
+  });
+}
+
+function recommendGuesses(candidates, pool) {
+  const base = candidates.length ? candidates : (wordsByLength[5] || []);
+  const letterWeight = {};
+  base.forEach((word) => [...new Set(word)].forEach((letter) => letterWeight[letter] = (letterWeight[letter] || 0) + 1));
+  return [...pool].sort((a, b) => guessValue(b, letterWeight) - guessValue(a, letterWeight) || a.localeCompare(b));
+}
+
+function guessValue(word, letterWeight) {
+  return [...new Set(word)].reduce((sum, letter) => sum + (letterWeight[letter] || 0), 0);
+}
+
+function setupCrossword(tool) {
+  const form = tool.querySelector(".crossword-form");
+  const results = tool.querySelector(".results");
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(form));
+    const pattern = String(data.pattern || "").toLowerCase().replace(/\s/g, "").replace(/_/g, "?").replace(/[^a-z?]/g, "");
+    const must = clean(data.mustInclude);
+    const excluded = clean(data.excluded);
+    if (!pattern) {
+      results.innerHTML = `<h2>Matches</h2><p class="empty-state">Enter a pattern such as c?a?e or __a_e.</p>`;
+      return;
+    }
+    const list = (wordsByLength[pattern.length] || [])
+      .filter((word) => [...pattern].every((ch, i) => ch === "?" || ch === word[i]))
+      .filter((word) => [...must].every((ch) => word.includes(ch)))
       .filter((word) => ![...excluded].some((ch) => word.includes(ch)))
-      .map((word) => ({ word, length: 5, score: scoreWord(word), definition: "Candidate five-letter word from the current list." }));
+      .slice(0, MAX_RESULTS)
+      .map((word) => ({ word, length: word.length, score: scoreWord(word), definition: "Crossword pattern match from the current word list." }));
+    list.queryTotal = pattern.length;
     renderResults(results, list);
   });
   tool.querySelector("[data-action='clear']")?.addEventListener("click", () => {
     form.reset();
-    results.innerHTML = `<h2>Candidates</h2><p class="empty-state">Add a pattern or letter clues to filter five-letter words.</p>`;
+    results.innerHTML = `<h2>Matches</h2><p class="empty-state">Enter a pattern with ? or _ for unknown letters.</p>`;
   });
 }
 
@@ -186,6 +235,46 @@ function setupRandom(tool) {
     const list = [...pool].sort(() => Math.random() - 0.5).slice(0, count).map((word) => ({ word, length: word.length, score: scoreWord(word), definition: "Random word from the current list." }));
     renderResults(results, list);
   });
+}
+
+function setupDaily(tool) {
+  const kind = tool.dataset.dailyKind || "word";
+  const results = tool.querySelector(".results");
+  const render = (offset = 0) => {
+    const pool = kind === "five" ? (wordsByLength[5] || []) : words.filter((word) => word.length >= 4 && word.length <= 8);
+    const picked = pool[dailyIndex(pool.length, offset)];
+    if (kind === "anagram") {
+      const scrambled = scrambleWord(picked);
+      const letters = [...picked].sort().join("");
+      const answers = words.filter((word) => word.length === picked.length && [...word].sort().join("") === letters).slice(0, 20);
+      results.innerHTML = `<h2>Daily anagram</h2><article class="lookup-card"><strong>${scrambled.toUpperCase()}</strong><p>Unscramble these ${picked.length} letters.</p><p>Scrabble-style score: ${scoreWord(picked)}</p></article>${relatedSet("Possible answers", answers)}<p><a href="/anagram-solver">Open Anagram Solver</a></p>`;
+      return;
+    }
+    if (kind === "five") {
+      results.innerHTML = `<h2>Daily 5-letter challenge</h2><article class="lookup-card"><strong>${"_ ".repeat(5).trim()}</strong><p>Hint: starts with ${picked[0].toUpperCase()} and ends with ${picked[picked.length - 1].toUpperCase()}.</p><p>Letters include: ${[...new Set(picked)].slice(0, 3).join(", ")}</p><p>Answer: <a href="/word/${picked}">${picked}</a></p><p>Scrabble-style score: ${scoreWord(picked)}</p></article><p><a href="/wordle-solver">Open Wordle Solver</a></p>`;
+      return;
+    }
+    results.innerHTML = `<h2>Word of the day</h2><article class="lookup-card"><strong><a href="/word/${picked}">${picked}</a></strong><p>Length: ${picked.length}</p><p>Letters: ${[...picked].join(" ")}</p><p>Scrabble-style score: ${scoreWord(picked)}</p><p>Use it as a writing prompt, vocabulary warmup, or word game practice word.</p></article><p><a href="/word-finder">Find related words</a> · <a href="/random-word-generator">Generate random words</a></p>`;
+  };
+  render(0);
+  tool.querySelector("[data-action='new-daily']")?.addEventListener("click", () => render(Math.floor(Math.random() * 100000)));
+}
+
+function dailyIndex(length, offset = 0) {
+  const stamp = new Date().toISOString().slice(0, 10);
+  let hash = offset;
+  for (const ch of stamp) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return length ? hash % length : 0;
+}
+
+function scrambleWord(word) {
+  const letters = [...word];
+  for (let i = letters.length - 1; i > 0; i -= 1) {
+    const j = (i * 7 + word.charCodeAt(i % word.length)) % (i + 1);
+    [letters[i], letters[j]] = [letters[j], letters[i]];
+  }
+  const scrambled = letters.join("");
+  return scrambled === word ? [...word].reverse().join("") : scrambled;
 }
 
 function setupWordDetail(tool) {
@@ -232,6 +321,8 @@ document.addEventListener("click", async (event) => {
 
 document.querySelectorAll("[data-tool='unscrambler'],[data-tool='anagram'],[data-tool='finder']").forEach(setupWordTool);
 document.querySelectorAll("[data-tool='wordle']").forEach(setupWordle);
+document.querySelectorAll("[data-tool='crossword']").forEach(setupCrossword);
 document.querySelectorAll("[data-tool='dictionary']").forEach(setupDictionary);
 document.querySelectorAll("[data-tool='random']").forEach(setupRandom);
+document.querySelectorAll("[data-tool='daily']").forEach(setupDaily);
 document.querySelectorAll("[data-tool='word-detail']").forEach(setupWordDetail);

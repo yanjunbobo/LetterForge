@@ -160,6 +160,30 @@ button.secondary, .example-row button {
   width: 18px;
   min-height: 18px;
 }
+.wordle-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .6rem;
+  margin-bottom: .85rem;
+}
+.wordle-grid label {
+  font-size: .74rem;
+}
+.wordle-grid input {
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 900;
+  font-size: 1.25rem;
+}
+.wordle-grid select {
+  min-height: 38px;
+  padding: .35rem;
+  font-size: .78rem;
+}
+.crossword-form, .wordle-form, .dictionary-form, .random-form {
+  display: grid;
+  gap: .85rem;
+}
 
 .page-grid {
   display: grid;
@@ -356,6 +380,9 @@ button.secondary, .example-row button {
   .site-header { align-items: center; }
   .primary-row, .filters {
     grid-template-columns: 1fr;
+  }
+  .wordle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .hero-copy h1, .narrow-page h1, .article h1 {
     font-size: 2.45rem;
