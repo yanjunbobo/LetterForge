@@ -22,6 +22,15 @@ function canBuild(word, letters, wildcardCount) {
   return true;
 }
 
+function wildcardUseCount(word, letters) {
+  const have = freq(letters);
+  let used = 0;
+  for (const [ch, count] of Object.entries(freq(word))) {
+    used += Math.max(0, count - (have[ch] || 0));
+  }
+  return used;
+}
+
 function findWords(options) {
   const input = clean(options.letters, true);
   const letters = input.replace(/[?*]/g, "");
@@ -50,7 +59,7 @@ function findWords(options) {
     if (must && ![...must].every((ch) => word.includes(ch))) return false;
     return total ? canBuild(word, letters, wildcards) : true;
   });
-  list = list.map((word) => ({ word, length: word.length, score: scoreWord(word), definition: "Definition placeholder: add a licensed dictionary or API for meanings." }));
+  list = list.map((word) => ({ word, length: word.length, score: scoreWord(word), wildcardUses: wildcardUseCount(word, letters), definition: "Definition placeholder: add a licensed dictionary or API for meanings." }));
   list.sort((a, b) => {
     if (options.sortBy === "alpha") return a.word.localeCompare(b.word);
     if (options.sortBy === "score") return b.score - a.score || b.length - a.length || a.word.localeCompare(b.word);
@@ -59,6 +68,8 @@ function findWords(options) {
   const truncated = list.length > MAX_RESULTS;
   list = list.slice(0, MAX_RESULTS);
   list.truncated = truncated;
+  list.queryTotal = total;
+  list.hasWildcards = wildcards > 0;
   return list;
 }
 
@@ -70,6 +81,31 @@ function resultCard(item) {
   return `<article class="word-pill"><a href="/word/${item.word}">${item.word}</a><span>${item.length} letters</span><strong>${item.score} pts</strong><p>${item.definition}</p><button type="button" data-copy="${item.word}">Copy</button></article>`;
 }
 
+function miniWord(item) {
+  return `<a href="/word/${item.word}" title="${item.score} points">${item.word}<span>${item.score}</span></a>`;
+}
+
+function resultSpotlight(title, items) {
+  if (!items.length) return "";
+  return `<section class="result-spotlight"><h3>${title}</h3><div class="mini-word-list">${items.slice(0, 14).map(miniWord).join("")}</div></section>`;
+}
+
+function renderResultInsights(results) {
+  const best = [...results].sort((a, b) => b.length - a.length || b.score - a.score || a.word.localeCompare(b.word));
+  const scoring = [...results].sort((a, b) => b.score - a.score || b.length - a.length || a.word.localeCompare(b.word));
+  const short = results.filter((item) => item.length <= 4).sort((a, b) => a.length - b.length || a.word.localeCompare(b.word));
+  const allLetters = results.queryTotal ? results.filter((item) => item.length === results.queryTotal) : [];
+  const blanks = results.hasWildcards ? results.filter((item) => item.wildcardUses > 0).sort((a, b) => b.score - a.score || a.word.localeCompare(b.word)) : [];
+  return `<section class="result-insights">
+    <h2>Word Ideas</h2>
+    ${resultSpotlight("Best words from these letters", best)}
+    ${resultSpotlight("Highest scoring words", scoring)}
+    ${resultSpotlight("Short words", short)}
+    ${resultSpotlight("Words using all letters", allLetters)}
+    ${resultSpotlight("Words with blanks", blanks)}
+  </section>`;
+}
+
 function renderResults(container, results) {
   if (!results.length) {
     container.innerHTML = `<h2>Results</h2><p class="empty-state">No words found. Try fewer filters, add a wildcard, or choose a shorter length.</p>`;
@@ -77,7 +113,7 @@ function renderResults(container, results) {
   }
   const groups = grouped(results);
   const capped = results.truncated ? `<p class="empty-state">Showing the first ${MAX_RESULTS} matches. Add a length, prefix, ending, or required letter to narrow the list.</p>` : "";
-  container.innerHTML = `<h2>${results.length}${results.truncated ? "+" : ""} words found</h2>${capped}${Object.keys(groups).sort((a,b)=>b-a).map((len) => {
+  container.innerHTML = `${renderResultInsights(results)}<h2>${results.length}${results.truncated ? "+" : ""} words found</h2>${capped}${Object.keys(groups).sort((a,b)=>b-a).map((len) => {
     const visible = groups[len].slice(0, 24);
     const hidden = groups[len].slice(24);
     return `<section class="result-group"><h3>${len}-letter words</h3><div class="result-grid">${visible.map(resultCard).join("")}${hidden.map((item)=>`<span class="hidden-result">${resultCard(item)}</span>`).join("")}</div>${hidden.length ? `<button type="button" class="show-more">Show more</button>` : ""}</section>`;

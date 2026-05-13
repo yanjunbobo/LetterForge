@@ -203,6 +203,47 @@ button.secondary, .example-row button {
   margin: 1.1rem 0 .7rem;
   font-size: 1.05rem;
 }
+.result-insights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .8rem;
+  margin-bottom: 1rem;
+}
+.result-insights > h2 {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.result-spotlight {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: .8rem;
+}
+.result-spotlight h3 {
+  margin: 0 0 .55rem;
+  font-size: .98rem;
+}
+.mini-word-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+.mini-word-list a {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .28rem .5rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+  font-size: .88rem;
+}
+.mini-word-list span {
+  color: var(--brand-2);
+  font-size: .78rem;
+}
 .result-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
