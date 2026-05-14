@@ -258,17 +258,42 @@ function wordGameCheatSheet() {
   });
 }
 
+const alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
+const startingPages = alphabet.map((letter) => ({
+  url: `/words-starting-with-${letter}`,
+  title: `Words Starting With ${letter.toUpperCase()} | LetterForge`,
+  desc: `Browse words that start with ${letter.toUpperCase()} and filter by length, ending, and included letters.`,
+  h1: `Words Starting With ${letter.toUpperCase()}`,
+  filter: (word) => word.startsWith(letter),
+  intro: `Find words beginning with ${letter.toUpperCase()} for anagrams, crosswords, pattern searches, and vocabulary practice.`
+}));
+
+const endingPages = alphabet.map((letter) => ({
+  url: `/words-ending-with-${letter}`,
+  title: `Words Ending With ${letter.toUpperCase()} | LetterForge`,
+  desc: `Browse words that end with ${letter.toUpperCase()} and search related word patterns.`,
+  h1: `Words Ending With ${letter.toUpperCase()}`,
+  filter: (word) => word.endsWith(letter),
+  intro: `Find words ending with ${letter.toUpperCase()} for anagrams, crosswords, Wordle-style patterns, and spelling practice.`
+}));
+
 const seoListPages = [
   { url:"/two-letter-words", title:"Two-Letter Words List and Finder | LetterForge", desc:"Browse two-letter words for tight word game boards and quick puzzle plays.", h1:"Two-Letter Words", filter:w=>w.length===2, intro:"Two-letter words are small, flexible building blocks for crowded boards and fast puzzle solving." },
+  { url:"/3-letter-words", title:"3-Letter Words List and Finder | LetterForge", desc:"Browse 3-letter words for quick puzzle plays, hooks, anagrams, and vocabulary practice.", h1:"3-Letter Words", filter:w=>w.length===3, intro:"Three-letter words are useful for tight boards, quick hooks, short crossword answers, and fast vocabulary drills." },
   { url:"/4-letter-words", title:"4-Letter Words List and Finder | LetterForge", desc:"Browse 4-letter words and search by letters, score, prefix, and ending.", h1:"4-Letter Words", filter:w=>w.length===4, intro:"Four-letter words are useful for anagrams, short hooks, compact crossword spaces, and quick vocabulary practice." },
   { url:"/5-letter-words", title:"5-Letter Words List and Finder | LetterForge", desc:"Browse 5-letter words and use the word finder to filter puzzle candidates.", h1:"5-Letter Words", filter:w=>w.length===5, intro:"Browse useful five-letter words for Wordle-style puzzles, anagrams, and vocabulary practice." },
   { url:"/6-letter-words", title:"6-Letter Words List and Finder | LetterForge", desc:"Browse 6-letter words and find related words by letters, prefixes, and endings.", h1:"6-Letter Words", filter:w=>w.length===6, intro:"Browse six-letter words for anagrams, word games, and study sessions." },
   { url:"/7-letter-words", title:"7-Letter Words List and Finder | LetterForge", desc:"Browse 7-letter words for anagrams, word games, and longer puzzle answers.", h1:"7-Letter Words", filter:w=>w.length===7, intro:"Seven-letter words are valuable for full-rack anagrams, longer clues, and high-scoring word game turns." },
-  { url:"/words-starting-with-a", title:"Words Starting With A | LetterForge", desc:"Browse words that start with A and filter by length, ending, and included letters.", h1:"Words Starting With A", filter:w=>w.startsWith("a"), intro:"Explore words beginning with A, from short puzzle plays to longer vocabulary picks." },
-  { url:"/words-starting-with-b", title:"Words Starting With B | LetterForge", desc:"Browse words that start with B and use filters to narrow word game candidates.", h1:"Words Starting With B", filter:w=>w.startsWith("b"), intro:"Find words beginning with B for anagrams, crosswords, and pattern searches." },
-  { url:"/words-ending-with-e", title:"Words Ending With E | LetterForge", desc:"Browse words that end with E and search related word patterns.", h1:"Words Ending With E", filter:w=>w.endsWith("e"), intro:"Find words ending with E for anagrams, crosswords, and Wordle-style patterns." },
+  { url:"/8-letter-words", title:"8-Letter Words List and Finder | LetterForge", desc:"Browse 8-letter words for longer anagrams, crosswords, and word game planning.", h1:"8-Letter Words", filter:w=>w.length===8, intro:"Eight-letter words are useful for longer anagrams, crossword answers, vocabulary practice, and high-value word game searches." },
+  ...startingPages,
+  ...endingPages,
   { url:"/words-ending-with-ing", title:"Words Ending With ING | LetterForge", desc:"Browse words ending in ING and filter them by length or included letters.", h1:"Words Ending With ING", filter:w=>w.endsWith("ing"), intro:"ING endings are common in English and useful for longer anagrams, crosswords, and vocabulary practice." },
   { url:"/words-containing-ar", title:"Words Containing AR | LetterForge", desc:"Browse words containing AR and search related letter patterns.", h1:"Words Containing AR", filter:w=>w.includes("ar"), intro:"Words containing AR are common in puzzles because the pair works in many positions: start, middle, and ending." },
+  { url:"/words-containing-th", title:"Words Containing TH | LetterForge", desc:"Browse words containing TH for crosswords, anagrams, spelling practice, and word games.", h1:"Words Containing TH", filter:w=>w.includes("th"), intro:"TH is one of the most useful English letter pairs. Browse words containing TH for clues, racks, and pattern practice." },
+  { url:"/words-containing-er", title:"Words Containing ER | LetterForge", desc:"Browse words containing ER and find related word game candidates by length and score.", h1:"Words Containing ER", filter:w=>w.includes("er"), intro:"ER appears in many common English words, endings, and word game patterns. Use this list to scan useful candidates quickly." },
+  { url:"/words-containing-qu", title:"Words Containing QU | LetterForge", desc:"Browse words containing QU for high-value word game searches and crossword patterns.", h1:"Words Containing QU", filter:w=>w.includes("qu"), intro:"QU words can be tricky to spot under pressure. This list helps you practice common and unusual QU patterns." },
+  { url:"/5-letter-words-with-a", title:"5-Letter Words With A | LetterForge", desc:"Browse five-letter words with A for Wordle-style puzzles, anagrams, and vocabulary practice.", h1:"5-Letter Words With A", filter:w=>w.length===5 && w.includes("a"), intro:"Five-letter words with A are especially useful for Wordle-style solving, quick anagram checks, and spelling pattern practice." },
+  { url:"/5-letter-words-ending-in-e", title:"5-Letter Words Ending in E | LetterForge", desc:"Browse five-letter words ending in E for Wordle-style puzzles, crosswords, and pattern searches.", h1:"5-Letter Words Ending in E", filter:w=>w.length===5 && w.endsWith("e"), intro:"Five-letter words ending in E are common in Wordle-style puzzles and helpful for narrowing fixed-position patterns." },
   { url:"/words-with-q", title:"Words With Q | LetterForge", desc:"Browse words with Q and find high-scoring word game ideas.", h1:"Words With Q", filter:w=>w.includes("q"), intro:"Q is a high-value Scrabble-style letter. Use this page to find Q words and practice awkward racks." },
   { url:"/words-with-q-without-u", title:"Words With Q Without U | LetterForge", desc:"Browse Q words without U for unusual racks, crosswords, and high-scoring word game ideas.", h1:"Words With Q Without U", filter:w=>w.includes("q") && !w.includes("u"), intro:"Q without U words are rare and useful for difficult racks, crossword clues, and pattern practice." },
   { url:"/words-with-double-letters", title:"Words With Double Letters | LetterForge", desc:"Browse words with repeated adjacent letters such as letter, coffee, and added.", h1:"Words With Double Letters", filter:w=>/(.)\1/.test(w), intro:"Double-letter words help with Wordle-style puzzles, spelling practice, and crossword patterns with repeated letters." },
